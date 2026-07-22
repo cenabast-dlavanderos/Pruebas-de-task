@@ -29,3 +29,17 @@ jobs:
       - name: 4. Publicación en GHCR
         run: |
           docker push ghcr.io/${{ github.repository_owner }}/pruebas-de-task:latest
+
+  sonarcloud-analysis:
+    runs-on: [self-hosted, linux, ubuntu]
+    steps:
+      - name: 1. Checkout del Código Fuente
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necesario para que Sonar analice el historial de Git
+
+      - name: 2. Análisis de Código con SonarCloud
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
