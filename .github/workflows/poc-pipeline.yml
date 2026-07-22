@@ -1,33 +1,32 @@
-name: PoC CI/CD Pipeline - CENABAST (Linux Stack)
+name: PoC CI/CD Pipeline - CENABAST
 
 on:
   push:
     branches: [ "main", "master" ]
-  pull_request:
-    branches: [ "main", "master" ]
 
 jobs:
-  build-and-test:
+  docker-ghcr:
     runs-on: [self-hosted, linux, ubuntu]
+    permissions:
+      contents: read
+      packages: write
 
     steps:
-      - name: 1. Checkout del Código Fuente
+      - name: 1. Checkout del Código
         uses: actions/checkout@v4
 
-      - name: 2. Verificación del Entorno
-        run: |
-          echo "==== Verificando Entorno de Construcción CENABAST ===="
-          echo "Usuario ejecutor: $(whoami)"
-          echo "Directorio de trabajo: $(pwd)"
-          echo "Versión de Git: $(git --version)"
-          node -v || echo "Node.js no instalado aún"
-          python3 --version || echo "Python3 no instalado aún"
+      - name: 2. Autenticación en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: 3. Simulación de Pruebas Unitarias
-        run: |
-          echo "Running unit tests..."
-          sleep 2
-          echo "✓ All tests passed successfully!"
-
-      - name: 4. Resumen de Ejecución
-        run: echo "Pipeline completado con éxito en el Runner Self-Hosted!"
+      - name: 3. Construcción y Publicación de la Imagen Docker
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/pruebas-de-task:latest
+            ghcr.io/${{ github.repository_owner }}/pruebas-de-task:${{ github.sha }}
