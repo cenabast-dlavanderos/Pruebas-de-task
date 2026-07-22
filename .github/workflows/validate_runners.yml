@@ -1,0 +1,72 @@
+name: Validacion runners self-hosted
+
+# Se ejecuta manualmente (workflow_dispatch) para confirmar que ambos runners
+# self-hosted responden y tienen lo necesario antes de aplicar los pipelines
+# reales (ci-botiquin.yml y ci-api-tienda-sap.yml) a los repos definitivos.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validar-linux:
+    name: Validar runner-linux-local-wsl
+    runs-on: [self-hosted, linux, ubuntu]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Info del runner
+        run: |
+          echo "Host: $(hostname)"
+          echo "OS: $(uname -a)"
+
+      - name: Verificar Docker
+        run: docker --version && docker info --format '{{.ServerVersion}}'
+
+      - name: Verificar Node.js (necesario para botiquin-api/app)
+        run: node --version || echo "Node no instalado aun en este runner"
+
+      - name: Verificar acceso a ghcr.io
+        run: curl -sSf -o /dev/null -w "HTTP %{http_code}\n" https://ghcr.io/v2/ || echo "Sin acceso a ghcr.io - revisar proxy/Forticlient"
+
+  validar-windows:
+    name: Validar runner-windows-iis
+    runs-on: [self-hosted, windows, iis, dotnet]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Info del runner
+        shell: powershell
+        run: |
+          Write-Host "Host: $env:COMPUTERNAME"
+          Write-Host "OS: $(Get-CimInstance Win32_OperatingSystem | Select-Object -ExpandProperty Caption)"
+
+      - name: Verificar .NET / MSBuild
+        shell: powershell
+        run: dotnet --version
+
+      - name: Verificar IIS
+        shell: powershell
+        run: |
+          Import-Module WebAdministration -ErrorAction SilentlyContinue
+          if (Get-Module WebAdministration) { Write-Host "Modulo IIS disponible" } else { Write-Warning "Modulo WebAdministration no disponible" }
+
+      - name: Verificar conector SAP.NET
+        shell: powershell
+        run: |
+          if (Test-Path "C:\SAP\dotnetconnector3\sapnco.dll") {
+            Write-Host "Conector SAP.NET encontrado"
+          } else {
+            Write-Warning "Conector SAP.NET NO encontrado en la ruta esperada - ajustar antes de correr ci-api-tienda-sap.yml"
+          }
+
+      - name: Verificar acceso a internet/proxy
+        shell: powershell
+        run: |
+          try {
+            $r = Invoke-WebRequest -Uri "https://api.github.com" -UseBasicParsing -TimeoutSec 10
+            Write-Host "GitHub API responde: $($r.StatusCode)"
+          } catch {
+            Write-Warning "Sin acceso a api.github.com - revisar proxy/Forticlient"
+          }
