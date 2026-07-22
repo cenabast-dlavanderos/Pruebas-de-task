@@ -63,10 +63,11 @@ jobs:
           } else {
               Write-Host "Servicio IIS disponible o listo para integración." -ForegroundColor Yellow
           }
-
+        
       - name: 3. Simulación de Compilación .NET Framework + Conector SAP
         shell: powershell
         run: |
-          Write-Host "Compilando solución .NET Framework / Core para IIS..." -ForegroundColor Yellow
+          Write-Host "Compilando solucion .NET Framework / Core para IIS..." -ForegroundColor Yellow
           Start-Sleep -Seconds 2
-          Write-Host "✓ Ensamblado completado con éxito. DLLs de SAP vinculadas correctamente." -ForegroundColor Green
+          Write-Host "Ensamblado completado con exito. DLLs de SAP vinculadas correctamente." -ForegroundColor Green
+
