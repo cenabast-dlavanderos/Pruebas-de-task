@@ -55,8 +55,14 @@ jobs:
         run: |
           Write-Host "==== Verificando Entorno Windows CENABAST ====" -ForegroundColor Green
           Write-Host "Nombre del Host: $env:COMPUTERNAME"
-          Write-Host "Versión de PowerShell: $PSVersionTable.PSVersion"
-          Get-Service -Name "W3SVC" -ErrorAction SilentlyContinue || Write-Host "Servicio IIS disponible o listo para integración"
+          Write-Host "Versión de PowerShell: $($PSVersionTable.PSVersion)"
+          
+          $iisService = Get-Service -Name "W3SVC" -ErrorAction SilentlyContinue
+          if ($iisService) {
+              Write-Host "Servicio IIS activo y corriendo." -ForegroundColor Green
+          } else {
+              Write-Host "Servicio IIS disponible o listo para integración." -ForegroundColor Yellow
+          }
 
       - name: 3. Simulación de Compilación .NET Framework + Conector SAP
         shell: powershell
